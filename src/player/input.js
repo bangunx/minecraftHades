@@ -13,6 +13,9 @@ export class PlayerInput {
     this.sprint = false;
 
     this.lookDelta = new THREE.Vector2();
+    this.flyUp = false;
+    this.flyDown = false;
+    this.jumpHeld = false;
   }
 
   setPalette(ids) {
@@ -40,10 +43,13 @@ export class PlayerInput {
         break;
       case 'Space':
         this.jumpRequested = true;
+        this.jumpHeld = true;
+        this.flyUp = true;
         break;
       case 'ShiftLeft':
       case 'ShiftRight':
         this.sprint = true;
+        this.flyDown = true;
         break;
       default:
         this._handleBlockSelection(code);
@@ -69,9 +75,14 @@ export class PlayerInput {
       case 'ArrowRight':
         this.moveRight = false;
         break;
+      case 'Space':
+        this.jumpHeld = false;
+        this.flyUp = false;
+        break;
       case 'ShiftLeft':
       case 'ShiftRight':
         this.sprint = false;
+        this.flyDown = false;
         break;
       default:
         break;
@@ -82,8 +93,8 @@ export class PlayerInput {
     if (!this.blockPalette.length) return;
     if (code.startsWith('Digit')) {
       const index = Number(code.slice(5)) - 1;
-      if (!Number.isNaN(index) && index >= 0 && index < this.blockPalette.length) {
-        this.activeBlockIndex = index;
+      if (!Number.isNaN(index)) {
+        this.setActiveBlockIndex(index);
       }
     }
   }
@@ -106,6 +117,28 @@ export class PlayerInput {
 
   getActiveBlockId() {
     if (!this.blockPalette.length) return null;
-    return this.blockPalette[this.activeBlockIndex % this.blockPalette.length];
+    return this.blockPalette[this.getActiveBlockIndex()];
+  }
+
+  getActiveBlockIndex() {
+    if (!this.blockPalette.length) return -1;
+    const length = this.blockPalette.length;
+    return ((this.activeBlockIndex % length) + length) % length;
+  }
+
+  getBlockPalette() {
+    return [...this.blockPalette];
+  }
+
+  setActiveBlockIndex(index) {
+    if (!this.blockPalette.length) return;
+    if (Number.isNaN(index)) return;
+    this.activeBlockIndex = ((Math.floor(index) % this.blockPalette.length) + this.blockPalette.length) % this.blockPalette.length;
+  }
+
+  cyclePalette(direction) {
+    if (!this.blockPalette.length) return;
+    if (!direction) return;
+    this.setActiveBlockIndex(this.activeBlockIndex + Math.sign(direction));
   }
 }

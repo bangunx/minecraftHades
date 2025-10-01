@@ -7,10 +7,11 @@ import { setupEnvironment } from './environment.js';
 import { World } from '../world/world.js';
 import { Player } from '../player/player.js';
 import { Hud } from '../ui/hud.js';
+import { Minimap } from '../ui/minimap.js';
 import { BLOCKS } from '../world/blockTypes.js';
 
 export class Game {
-  constructor({ canvas, hudElement, onPointerLockChange }) {
+  constructor({ canvas, hudElement, hotbarElement, minimapElement, onPointerLockChange }) {
     this.canvas = canvas;
     this.renderer = createRenderer(canvas);
     this.scene = new THREE.Scene();
@@ -21,7 +22,6 @@ export class Game {
 
     this.world = new World(this.scene);
     this.world.generate();
-    this.world.build();
 
     this.player = new Player({
       camera: this.camera,
@@ -34,8 +34,10 @@ export class Game {
 
     const spawnPoint = this._findSpawnPoint();
     this.player.teleport(spawnPoint);
+    this.world.update(this.player.getPosition(), 0);
 
-    this.hud = new Hud(hudElement, this.player);
+    this.hud = new Hud(hudElement, hotbarElement, this.player);
+    this.minimap = new Minimap(minimapElement, this.world, this.player);
 
     this.loop = new GameLoop(this.update.bind(this), this.render.bind(this));
 
@@ -57,8 +59,9 @@ export class Game {
 
   update(delta) {
     this.player.update(delta);
-    this.world.update(delta);
+    this.world.update(this.player.getPosition(), delta);
     this.hud.update(delta);
+    this.minimap.update(delta);
   }
 
   render() {
@@ -78,6 +81,7 @@ export class Game {
     this.player.dispose();
     this.world.dispose();
     this.renderer.dispose();
+    this.minimap.dispose();
     this.canvas.removeEventListener('mousedown', this._handleMouseDown);
     this.canvas.removeEventListener('contextmenu', this._preventContextMenu);
   }
@@ -96,7 +100,7 @@ export class Game {
     const target = this._raycast();
     if (!target) return;
     if (this.world.dig(target.block.x, target.block.y, target.block.z)) {
-      this.world.update(0);
+      this.world.update(this.player.getPosition(), 0);
     }
   }
 
@@ -118,7 +122,7 @@ export class Game {
     if (this.player.intersectsBlock(placePosition.x, placePosition.y, placePosition.z)) return;
 
     if (this.world.place(placePosition.x, placePosition.y, placePosition.z, blockId)) {
-      this.world.update(0);
+      this.world.update(this.player.getPosition(), 0);
     }
   }
 
@@ -130,18 +134,15 @@ export class Game {
   }
 
   _findSpawnPoint() {
-    const centerX = Math.floor(this.world.width / 2);
-    const centerZ = Math.floor(this.world.depth / 2);
-    const searchRadius = Math.max(this.world.width, this.world.depth) / 2;
-
-    for (let r = 0; r < searchRadius; r += 2) {
+    const maxRadius = 64;
+    for (let r = 0; r <= maxRadius; r++) {
       for (let dx = -r; dx <= r; dx++) {
         for (let dz = -r; dz <= r; dz++) {
-          const x = centerX + dx;
-          const z = centerZ + dz;
-          if (!this.world.isWithinBounds(x, 0, z)) continue;
+          if (Math.abs(dx) !== r && Math.abs(dz) !== r) continue;
+          const x = dx;
+          const z = dz;
           const surface = this.world.getSurfaceHeight(x, z);
-          const blockId = this.world.getBlock(x, surface, z);
+          const blockId = this.world.getBlock(x, surface, z, { ensureGeneration: true });
           if (blockId === BLOCKS.WATER) continue;
           const centerY = surface + this.player.halfHeight + 0.2;
           if (centerY + this.player.halfHeight >= this.world.height) continue;
@@ -150,6 +151,7 @@ export class Game {
       }
     }
 
-    return new THREE.Vector3(centerX + 0.5, this.player.halfHeight + 2, centerZ + 0.5);
+    const fallbackSurface = this.world.getSurfaceHeight(0, 0);
+    return new THREE.Vector3(0.5, fallbackSurface + this.player.halfHeight + 0.2, 0.5);
   }
 }

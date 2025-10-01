@@ -6,7 +6,14 @@ export const BLOCKS = {
   SAND: 4,
   WATER: 5,
   LOG: 6,
-  LEAVES: 7
+  LEAVES: 7,
+  WATER_FLOWING: 8,
+  SAPLING: 9,
+  WHEAT_STAGE_1: 10,
+  WHEAT_STAGE_2: 11,
+  WHEAT_STAGE_3: 12,
+  COBBLESTONE: 13,
+  GRAVEL: 14
 };
 
 export const BLOCK_DEFINITIONS = {
@@ -50,7 +57,7 @@ export const BLOCK_DEFINITIONS = {
     name: 'Water',
     solid: false,
     transparent: true,
-    selectable: false
+    selectable: true
   },
   [BLOCKS.LOG]: {
     id: BLOCKS.LOG,
@@ -65,12 +72,74 @@ export const BLOCK_DEFINITIONS = {
     solid: true,
     transparent: true,
     selectable: false
+  },
+  [BLOCKS.WATER_FLOWING]: {
+    id: BLOCKS.WATER_FLOWING,
+    name: 'Flowing Water',
+    solid: false,
+    transparent: true,
+    selectable: false,
+    tickable: true
+  },
+  [BLOCKS.SAPLING]: {
+    id: BLOCKS.SAPLING,
+    name: 'Sapling',
+    solid: false,
+    transparent: true,
+    selectable: true,
+    tickable: true
+  },
+  [BLOCKS.WHEAT_STAGE_1]: {
+    id: BLOCKS.WHEAT_STAGE_1,
+    name: 'Wheat (Young)',
+    solid: false,
+    transparent: true,
+    selectable: false,
+    tickable: true
+  },
+  [BLOCKS.WHEAT_STAGE_2]: {
+    id: BLOCKS.WHEAT_STAGE_2,
+    name: 'Wheat (Growing)',
+    solid: false,
+    transparent: true,
+    selectable: false,
+    tickable: true
+  },
+  [BLOCKS.WHEAT_STAGE_3]: {
+    id: BLOCKS.WHEAT_STAGE_3,
+    name: 'Wheat (Mature)',
+    solid: false,
+    transparent: true,
+    selectable: true,
+    tickable: false
+  },
+  [BLOCKS.COBBLESTONE]: {
+    id: BLOCKS.COBBLESTONE,
+    name: 'Cobblestone',
+    solid: true,
+    transparent: false,
+    selectable: true
+  },
+  [BLOCKS.GRAVEL]: {
+    id: BLOCKS.GRAVEL,
+    name: 'Gravel',
+    solid: true,
+    transparent: false,
+    selectable: true
   }
 };
 
-export const SELECTABLE_BLOCK_IDS = Object.values(BLOCK_DEFINITIONS)
-  .filter((block) => block.selectable)
-  .map((block) => block.id);
+export const SELECTABLE_BLOCK_IDS = [
+  BLOCKS.GRASS,
+  BLOCKS.SAND,
+  BLOCKS.STONE,
+  BLOCKS.LOG,
+  BLOCKS.WATER,
+  BLOCKS.SAPLING,
+  BLOCKS.WHEAT_STAGE_3,
+  BLOCKS.COBBLESTONE,
+  BLOCKS.GRAVEL
+];
 
 export function blockNameFromId(id) {
   const entry = BLOCK_DEFINITIONS[id];

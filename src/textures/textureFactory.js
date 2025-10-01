@@ -207,6 +207,56 @@ function makeLeavesTexture() {
   return texture;
 }
 
+function makeSaplingTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#2d5016';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  drawSpeckles(ctx, '#4a8c2a', 0.04, [1, 2.5], 0.8);
+  drawSpeckles(ctx, '#1a3010', 0.02, [0.8, 1.5], 0.5);
+  addFineNoise(ctx, 0.06);
+  const texture = toCanvasTexture(canvas);
+  return texture;
+}
+
+function makeWheatTexture(stage) {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  const colors = {
+    1: { top: '#6b9b37', bottom: '#4a6b25' },
+    2: { top: '#8ab84d', bottom: '#6b9b37' },
+    3: { top: '#e8d174', bottom: '#c4a648' }
+  };
+  const color = colors[stage] || colors[1];
+  paintVerticalGradient(ctx, color.top, color.bottom);
+  drawSpeckles(ctx, '#f0e8a0', 0.015, [0.5, 1], 0.4);
+  addFineNoise(ctx, 0.08);
+  const texture = toCanvasTexture(canvas);
+  return texture;
+}
+
+function makeCobblestoneTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  paintVerticalGradient(ctx, '#7a7c80', '#5a5c60');
+  drawSpeckles(ctx, '#9a9c9f', 0.025, [1, 2.5], 0.6);
+  drawSpeckles(ctx, '#3a3c40', 0.02, [0.8, 2], 0.5);
+  addFineNoise(ctx, 0.12);
+  const texture = toCanvasTexture(canvas);
+  return texture;
+}
+
+function makeGravelTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  paintVerticalGradient(ctx, '#7d7166', '#5a5046');
+  drawSpeckles(ctx, '#938578', 0.035, [0.8, 2], 0.65);
+  drawSpeckles(ctx, '#3d352c', 0.025, [0.7, 1.8], 0.5);
+  addFineNoise(ctx, 0.14);
+  const texture = toCanvasTexture(canvas);
+  return texture;
+}
+
 function createWaterMaterial(texture) {
   const material = new THREE.MeshStandardMaterial({
     map: texture,
@@ -254,6 +304,12 @@ export class TextureFactory {
     const water = makeWaterTexture();
     const log = makeLogTexture();
     const leaves = makeLeavesTexture();
+    const sapling = makeSaplingTexture();
+    const wheat1 = makeWheatTexture(1);
+    const wheat2 = makeWheatTexture(2);
+    const wheat3 = makeWheatTexture(3);
+    const cobblestone = makeCobblestoneTexture();
+    const gravel = makeGravelTexture();
 
     this.materials = {
       [BLOCKS.GRASS]: createOpaqueMaterial(grass, { roughness: 0.88 }),
@@ -262,7 +318,14 @@ export class TextureFactory {
       [BLOCKS.SAND]: createOpaqueMaterial(sand, { roughness: 0.95 }),
       [BLOCKS.WATER]: createWaterMaterial(water),
       [BLOCKS.LOG]: createOpaqueMaterial(log, { roughness: 0.78 }),
-      [BLOCKS.LEAVES]: createLeafMaterial(leaves)
+      [BLOCKS.LEAVES]: createLeafMaterial(leaves),
+      [BLOCKS.WATER_FLOWING]: createWaterMaterial(water),
+      [BLOCKS.SAPLING]: createLeafMaterial(sapling),
+      [BLOCKS.WHEAT_STAGE_1]: createLeafMaterial(wheat1),
+      [BLOCKS.WHEAT_STAGE_2]: createLeafMaterial(wheat2),
+      [BLOCKS.WHEAT_STAGE_3]: createLeafMaterial(wheat3),
+      [BLOCKS.COBBLESTONE]: createOpaqueMaterial(cobblestone, { roughness: 0.92 }),
+      [BLOCKS.GRAVEL]: createOpaqueMaterial(gravel, { roughness: 0.96 })
     };
 
     return this.materials;
