@@ -238,6 +238,9 @@ export class World {
       if (neighbor === BLOCKS.AIR || neighbor === BLOCKS.WATER) return true;
       const neighborDef = BLOCK_DEFINITIONS[neighbor];
       if (!neighborDef || neighborDef.transparent) {
+        if (neighbor === blockId && neighborDef?.transparent) {
+          continue;
+        }
         return true;
       }
     }

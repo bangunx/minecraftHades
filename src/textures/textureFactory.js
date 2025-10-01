@@ -135,6 +135,16 @@ function drawWaves(ctx, color, amplitude = 1.5, frequency = 0.35, alpha = 0.25) 
   ctx.restore();
 }
 
+function applyAlpha(ctx, alphaValue) {
+  const clamped = Math.round(Math.max(0, Math.min(255, alphaValue)));
+  const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
+  const { data } = imageData;
+  for (let i = 0; i < data.length; i += 4) {
+    data[i + 3] = clamped;
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
 function makeGrassTexture() {
   const canvas = createCanvas();
   const ctx = canvas.getContext('2d');
@@ -184,6 +194,45 @@ function makeWaterTexture() {
   addFineNoise(ctx, 0.04);
   const texture = toCanvasTexture(canvas);
   return texture;
+}
+
+function makeCobbleTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  paintVerticalGradient(ctx, '#8c8f94', '#575b5f');
+  drawSpeckles(ctx, '#aeb1b6', 0.018, [0.6, 1.3], 0.55);
+  drawSpeckles(ctx, '#35373a', 0.014, [0.6, 1.5], 0.45);
+  addFineNoise(ctx, 0.08);
+  return toCanvasTexture(canvas);
+}
+
+function makeClayTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  paintVerticalGradient(ctx, '#c7b8d4', '#8d7fa7');
+  drawSpeckles(ctx, '#dcd2ea', 0.018, [0.7, 1.4], 0.5);
+  drawSpeckles(ctx, '#6a5d86', 0.012, [0.7, 1.3], 0.35);
+  addFineNoise(ctx, 0.07);
+  return toCanvasTexture(canvas);
+}
+
+function makeGlassTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  paintVerticalGradient(ctx, '#e6f6ff', '#a7d3ff');
+  drawWaves(ctx, '#ffffff', 0.6, 0.38, 0.28);
+  applyAlpha(ctx, 180);
+  return toCanvasTexture(canvas);
+}
+
+function makeGlowTexture() {
+  const canvas = createCanvas();
+  const ctx = canvas.getContext('2d');
+  paintVerticalGradient(ctx, '#ffe89a', '#e3a848');
+  drawSpeckles(ctx, '#fff5c2', 0.025, [0.6, 1.3], 0.65);
+  drawSpeckles(ctx, '#b36a1f', 0.012, [0.6, 1.1], 0.35);
+  addFineNoise(ctx, 0.06);
+  return toCanvasTexture(canvas);
 }
 
 function makeLogTexture() {
@@ -239,6 +288,28 @@ function createLeafMaterial(texture) {
   });
 }
 
+function createGlassMaterial(texture) {
+  return new THREE.MeshStandardMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0.55,
+    roughness: 0.12,
+    metalness: 0.04,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+}
+
+function createGlowMaterial(texture) {
+  return new THREE.MeshStandardMaterial({
+    map: texture,
+    emissive: new THREE.Color('#ffcf6f'),
+    emissiveIntensity: 0.9,
+    roughness: 0.4,
+    metalness: 0.12
+  });
+}
+
 export class TextureFactory {
   constructor() {
     this.materials = null;
@@ -254,6 +325,10 @@ export class TextureFactory {
     const water = makeWaterTexture();
     const log = makeLogTexture();
     const leaves = makeLeavesTexture();
+    const cobble = makeCobbleTexture();
+    const clay = makeClayTexture();
+    const glass = makeGlassTexture();
+    const glow = makeGlowTexture();
 
     this.materials = {
       [BLOCKS.GRASS]: createOpaqueMaterial(grass, { roughness: 0.88 }),
@@ -262,7 +337,11 @@ export class TextureFactory {
       [BLOCKS.SAND]: createOpaqueMaterial(sand, { roughness: 0.95 }),
       [BLOCKS.WATER]: createWaterMaterial(water),
       [BLOCKS.LOG]: createOpaqueMaterial(log, { roughness: 0.78 }),
-      [BLOCKS.LEAVES]: createLeafMaterial(leaves)
+      [BLOCKS.LEAVES]: createLeafMaterial(leaves),
+      [BLOCKS.COBBLE]: createOpaqueMaterial(cobble, { roughness: 0.82 }),
+      [BLOCKS.CLAY]: createOpaqueMaterial(clay, { roughness: 0.76 }),
+      [BLOCKS.GLASS]: createGlassMaterial(glass),
+      [BLOCKS.GLOWSTONE]: createGlowMaterial(glow)
     };
 
     return this.materials;

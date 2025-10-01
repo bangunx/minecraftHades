@@ -6,7 +6,11 @@ export const BLOCKS = {
   SAND: 4,
   WATER: 5,
   LOG: 6,
-  LEAVES: 7
+  LEAVES: 7,
+  COBBLE: 8,
+  CLAY: 9,
+  GLASS: 10,
+  GLOWSTONE: 11
 };
 
 export const BLOCK_DEFINITIONS = {
@@ -65,6 +69,34 @@ export const BLOCK_DEFINITIONS = {
     solid: true,
     transparent: true,
     selectable: false
+  },
+  [BLOCKS.COBBLE]: {
+    id: BLOCKS.COBBLE,
+    name: 'Cobble',
+    solid: true,
+    transparent: false,
+    selectable: true
+  },
+  [BLOCKS.CLAY]: {
+    id: BLOCKS.CLAY,
+    name: 'Clay',
+    solid: true,
+    transparent: false,
+    selectable: true
+  },
+  [BLOCKS.GLASS]: {
+    id: BLOCKS.GLASS,
+    name: 'Glass',
+    solid: true,
+    transparent: true,
+    selectable: true
+  },
+  [BLOCKS.GLOWSTONE]: {
+    id: BLOCKS.GLOWSTONE,
+    name: 'Glowstone',
+    solid: true,
+    transparent: false,
+    selectable: true
   }
 };
 

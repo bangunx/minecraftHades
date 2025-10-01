@@ -7,10 +7,12 @@ import { setupEnvironment } from './environment.js';
 import { World } from '../world/world.js';
 import { Player } from '../player/player.js';
 import { Hud } from '../ui/hud.js';
+import { Minimap } from '../ui/minimap.js';
+import { Compass } from '../ui/compass.js';
 import { BLOCKS } from '../world/blockTypes.js';
 
 export class Game {
-  constructor({ canvas, hudElement, onPointerLockChange }) {
+  constructor({ canvas, hudElement, minimapCanvas, compassElement, viewModeLabelElement, onPointerLockChange }) {
     this.canvas = canvas;
     this.renderer = createRenderer(canvas);
     this.scene = new THREE.Scene();
@@ -27,6 +29,7 @@ export class Game {
       camera: this.camera,
       canvas,
       world: this.world,
+      scene: this.scene,
       onPointerLockChange
     });
 
@@ -35,7 +38,19 @@ export class Game {
     const spawnPoint = this._findSpawnPoint();
     this.player.teleport(spawnPoint);
 
+    this.minimap = minimapCanvas
+      ? new Minimap({ canvas: minimapCanvas, world: this.world, player: this.player })
+      : null;
+    this.compass = compassElement ? new Compass({ element: compassElement, player: this.player }) : null;
+    if (this.minimap) {
+      this.minimap.registerLandmark(spawnPoint.x, spawnPoint.z, 'Spawn');
+    }
+
     this.hud = new Hud(hudElement, this.player);
+
+    this.viewModeLabelElement = viewModeLabelElement ?? null;
+    this._lastViewModeLabel = null;
+    this._updateViewModeLabel(true);
 
     this.loop = new GameLoop(this.update.bind(this), this.render.bind(this));
 
@@ -43,9 +58,11 @@ export class Game {
 
     this._handleMouseDown = this._handleMouseDown.bind(this);
     this._preventContextMenu = (event) => event.preventDefault();
+    this._handleWheel = this._handleWheel.bind(this);
 
     canvas.addEventListener('mousedown', this._handleMouseDown);
     canvas.addEventListener('contextmenu', this._preventContextMenu);
+    canvas.addEventListener('wheel', this._handleWheel, { passive: false });
   }
 
   start() {
@@ -58,7 +75,17 @@ export class Game {
   update(delta) {
     this.player.update(delta);
     this.world.update(delta);
-    this.hud.update(delta);
+    if (this.minimap) {
+      this.minimap.update(delta);
+    }
+    if (this.compass) {
+      this.compass.update();
+    }
+
+    const landmarks = this.minimap ? this.minimap.getLandmarkSummaries() : [];
+    const headingLabel = this.compass ? this.compass.getDirectionLabel() : null;
+    this._updateViewModeLabel();
+    this.hud.update(delta, { landmarks, headingLabel });
   }
 
   render() {
@@ -71,6 +98,7 @@ export class Game {
     this.renderer.setSize(width, height);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
+    this.minimap?.handleResize();
   }
 
   dispose() {
@@ -80,6 +108,7 @@ export class Game {
     this.renderer.dispose();
     this.canvas.removeEventListener('mousedown', this._handleMouseDown);
     this.canvas.removeEventListener('contextmenu', this._preventContextMenu);
+    this.canvas.removeEventListener('wheel', this._handleWheel);
   }
 
   _handleMouseDown(event) {
@@ -127,6 +156,34 @@ export class Game {
     camera.getWorldDirection(this._rayDirection).normalize();
     const origin = this.player.getEyesPosition();
     return this.world.raycast(origin, this._rayDirection, { maxDistance: 8 });
+  }
+
+  _handleWheel(event) {
+    const mode = this.player.getViewMode?.();
+    if (mode !== 'third') return;
+
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? 1 : -1;
+    this.player.adjustThirdPersonDistance?.(delta);
+  }
+
+  toggleViewMode() {
+    const mode = this.player.toggleViewMode();
+    this._updateViewModeLabel(true);
+    return mode;
+  }
+
+  getViewMode() {
+    return this.player.getViewMode();
+  }
+
+  _updateViewModeLabel(force = false) {
+    if (!this.viewModeLabelElement) return;
+    const mode = this.player.getViewMode();
+    if (!force && mode === this._lastViewModeLabel) return;
+    const label = mode === 'third' ? 'Third-person' : 'First-person';
+    this.viewModeLabelElement.textContent = label;
+    this._lastViewModeLabel = mode;
   }
 
   _findSpawnPoint() {

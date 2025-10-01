@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { PlayerInput } from './input.js';
 import { BLOCK_DEFINITIONS } from '../world/blockTypes.js';
+import { PlayerModel } from './playerModel.js';
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 export class Player {
-  constructor({ camera, canvas, world, onPointerLockChange }) {
+  constructor({ camera, canvas, world, scene, onPointerLockChange }) {
     this.camera = camera;
     this.world = world;
     this.canvas = canvas;
+    this.scene = scene;
     this.onPointerLockChange = onPointerLockChange;
 
     this.controls = new PointerLockControls(camera, canvas);
@@ -23,6 +25,15 @@ export class Player {
     this.position = new THREE.Vector3(0.5, this.halfHeight + 5, 0.5);
     this.velocity = new THREE.Vector3();
     this.onGround = false;
+    this.headingRadians = 0;
+
+    this.viewMode = 'third';
+    this.thirdPersonDistance = 4;
+    this.minThirdPersonDistance = 1.5;
+    this.maxThirdPersonDistance = 9;
+    this.thirdPersonHeightOffset = 0.6;
+    this.thirdPersonZoomSpeed = 0.6;
+    this.thirdPersonSideOffset = 0.55;
 
     this.walkSpeed = 5;
     this.sprintSpeed = 8.5;
@@ -31,7 +42,7 @@ export class Player {
 
     this.input = new PlayerInput(this.world.getSelectableBlocks());
 
-    this._vectorForward = new THREE.Vector3();
+    this._vectorForward = new THREE.Vector3(0, 0, -1);
     this._vectorRight = new THREE.Vector3();
     this._tempPosition = new THREE.Vector3();
     this._playerMin = new THREE.Vector3();
@@ -48,7 +59,14 @@ export class Player {
     this.controls.addEventListener('lock', this._onLock);
     this.controls.addEventListener('unlock', this._onUnlock);
 
-    this._syncCamera();
+    this.model = new PlayerModel();
+    if (this.scene && this.model.group) {
+      this.scene.add(this.model.group);
+    }
+
+    this._cameraTarget = new THREE.Vector3();
+    this._syncCamera(0);
+    this._updateModel();
   }
 
   start() {
@@ -61,6 +79,10 @@ export class Player {
     this.controls.removeEventListener('lock', this._onLock);
     this.controls.removeEventListener('unlock', this._onUnlock);
     this.controls.dispose();
+    if (this.scene && this.model?.group) {
+      this.scene.remove(this.model.group);
+    }
+    this.model?.dispose?.();
   }
 
   isLocked() {
@@ -77,6 +99,7 @@ export class Player {
     }
     this._vectorForward.normalize();
     this._vectorRight.crossVectors(this._vectorForward, WORLD_UP).normalize();
+    this.headingRadians = Math.atan2(this._vectorForward.x, -this._vectorForward.z);
 
     const desired = new THREE.Vector3();
     desired.addScaledVector(this._vectorForward, -move.y);
@@ -99,7 +122,8 @@ export class Player {
     }
 
     this._applyMovement(delta);
-    this._syncCamera();
+    this._syncCamera(delta);
+    this._updateModel();
   }
 
   getCamera() {
@@ -116,6 +140,39 @@ export class Player {
 
   getPosition() {
     return this.position.clone();
+  }
+
+  getHeadingRadians() {
+    return this.headingRadians;
+  }
+
+  getHeadingDegrees() {
+    return THREE.MathUtils.radToDeg(this.headingRadians);
+  }
+
+  getBlockPalette() {
+    return this.input.blockPalette.slice();
+  }
+
+  getViewMode() {
+    return this.viewMode;
+  }
+
+  toggleViewMode() {
+    this.viewMode = this.viewMode === 'third' ? 'first' : 'third';
+    this._updateModel();
+    this._syncCamera(0);
+    return this.viewMode;
+  }
+
+  adjustThirdPersonDistance(direction) {
+    if (this.viewMode !== 'third' || !direction) return;
+    const step = this.thirdPersonZoomSpeed * direction;
+    this.thirdPersonDistance = THREE.MathUtils.clamp(
+      this.thirdPersonDistance + step,
+      this.minThirdPersonDistance,
+      this.maxThirdPersonDistance
+    );
   }
 
   intersectsBlock(x, y, z) {
@@ -158,10 +215,15 @@ export class Player {
   teleport(position) {
     this.position.copy(position);
     this.velocity.set(0, 0, 0);
-    this._syncCamera();
+    this._syncCamera(0);
+    this._updateModel();
   }
 
   _handleKeyDown(event) {
+    if (event.code === 'KeyV') {
+      this.toggleViewMode();
+      return;
+    }
     if (!this.isLocked()) return;
     this.input.handleKeyDown(event.code);
   }
@@ -275,10 +337,62 @@ export class Player {
     return false;
   }
 
-  _syncCamera() {
+  _syncCamera(delta = 0) {
     const eyeOffset = this.eyeHeight - this.halfHeight;
     const eyePosition = this._tempPosition.copy(this.position);
     eyePosition.y += eyeOffset;
-    this.controls.getObject().position.copy(eyePosition);
+
+    const cameraObject = this.controls.getObject();
+
+    if (this.viewMode === 'first') {
+      this._cameraTarget.copy(eyePosition);
+    } else {
+      const forward = this._vectorForward.clone();
+      forward.y = 0;
+      if (forward.lengthSq() < 1e-6) {
+        forward.set(0, 0, -1);
+      }
+      forward.normalize();
+
+      const offset = forward.clone().multiplyScalar(-this.thirdPersonDistance);
+      const cameraPosition = eyePosition.clone().add(offset);
+      cameraPosition.y += this.thirdPersonHeightOffset;
+
+      const right = new THREE.Vector3().crossVectors(forward, WORLD_UP);
+      if (right.lengthSq() > 1e-6) {
+        right.normalize().multiplyScalar(this.thirdPersonSideOffset);
+        cameraPosition.add(right);
+      }
+
+      const adjustStep = forward.clone().multiplyScalar(0.35);
+      let safety = 0;
+      while (
+        this.world.isSolid(
+          Math.floor(cameraPosition.x),
+          Math.floor(cameraPosition.y),
+          Math.floor(cameraPosition.z)
+        ) && safety < 12
+      ) {
+        cameraPosition.add(adjustStep);
+        safety += 1;
+      }
+
+      this._cameraTarget.copy(cameraPosition);
+    }
+
+    if (delta <= 0) {
+      cameraObject.position.copy(this._cameraTarget);
+      return;
+    }
+
+    const smoothing = this.viewMode === 'first' ? 18 : 8;
+    const factor = 1 - Math.exp(-smoothing * delta);
+    cameraObject.position.lerp(this._cameraTarget, factor);
+  }
+
+  _updateModel() {
+    if (!this.model) return;
+    this.model.setVisible(this.viewMode === 'third');
+    this.model.update(this.position, this.headingRadians, this.halfHeight);
   }
 }

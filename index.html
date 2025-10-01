@@ -59,6 +59,140 @@
         font-size: 0.9rem;
         line-height: 1.4;
         pointer-events: none;
+        z-index: 5;
+      }
+      #hud .landmark {
+        opacity: 0.75;
+      }
+      #hud .palette-entry {
+        display: inline-block;
+        margin-right: 4px;
+        font-size: 0.82rem;
+        opacity: 0.75;
+      }
+      #hud .palette-entry.active {
+        color: #ffd166;
+        opacity: 1;
+      }
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
+        z-index: 6;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      #crosshair.hidden {
+        opacity: 0;
+      }
+      #compass {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 120px;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        z-index: 5;
+      }
+      #compass .dial {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(12, 16, 24, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      }
+      #compass .dial::after {
+        content: '';
+        position: absolute;
+        inset: 12px;
+        border-radius: 50%;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        opacity: 0.8;
+      }
+      #compass .label {
+        position: absolute;
+        font-size: 0.8rem;
+        letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.75);
+      }
+      #compass .label.north { top: 6px; left: 50%; transform: translateX(-50%); }
+      #compass .label.south { bottom: 6px; left: 50%; transform: translateX(-50%); }
+      #compass .label.east { right: 6px; top: 50%; transform: translateY(-50%); }
+      #compass .label.west { left: 6px; top: 50%; transform: translateY(-50%); }
+      #compass .needle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border: 28px solid transparent;
+        border-top: 48px solid #ff6b6b;
+        transform: translate(-50%, -50%) rotate(0deg);
+        transform-origin: 50% 65%;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+      }
+      #compass .direction {
+        font-size: 0.9rem;
+        letter-spacing: 0.18em;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      #minimap {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        width: 180px;
+        height: 180px;
+        background: rgba(12, 16, 24, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+        image-rendering: pixelated;
+        pointer-events: none;
+        z-index: 5;
+      }
+      #viewToggle {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+        z-index: 6;
+      }
+      #viewToggle button {
+        background: rgba(42, 124, 255, 0.85);
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      }
+      #viewToggle button:hover {
+        background: rgba(42, 124, 255, 1);
+      }
+      #viewToggle .mode {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-align: right;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
     </style>
   </head>
@@ -66,10 +200,26 @@
     <canvas id="app"></canvas>
     <div id="overlay">
       <h1>Voxel Exploration</h1>
-      <p>Click to enter the world. Use WASD to move, space to jump, shift to sprint, and mouse to look around. Left click digs, right click places, number keys cycle blocks.</p>
+      <p>Click to enter the world. Use WASD to move, space to jump, shift to sprint, and mouse to look around. Left click digs, right click places, number keys cycle blocks. Press V to switch first/third-person and scroll while in third-person to zoom.</p>
       <button id="start">Enter World</button>
     </div>
     <div id="hud"></div>
+    <div id="compass">
+      <div class="dial">
+        <span class="label north">N</span>
+        <span class="label east">E</span>
+        <span class="label south">S</span>
+        <span class="label west">W</span>
+        <div class="needle"></div>
+      </div>
+      <div class="direction">N</div>
+    </div>
+    <canvas id="minimap" width="180" height="180"></canvas>
+    <div id="viewToggle">
+      <button type="button" id="toggleViewButton">Switch View (V)</button>
+      <div class="mode" id="viewModeLabel">Third-person</div>
+    </div>
+    <div id="crosshair" class="hidden"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

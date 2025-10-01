@@ -45,6 +45,12 @@ export class PlayerInput {
       case 'ShiftRight':
         this.sprint = true;
         break;
+      case 'KeyQ':
+        this.cyclePalette(-1);
+        break;
+      case 'KeyE':
+        this.cyclePalette(1);
+        break;
       default:
         this._handleBlockSelection(code);
         break;
@@ -107,5 +113,12 @@ export class PlayerInput {
   getActiveBlockId() {
     if (!this.blockPalette.length) return null;
     return this.blockPalette[this.activeBlockIndex % this.blockPalette.length];
+  }
+
+  cyclePalette(step) {
+    if (!this.blockPalette.length) return null;
+    const length = this.blockPalette.length;
+    this.activeBlockIndex = (this.activeBlockIndex + step + length) % length;
+    return this.getActiveBlockId();
   }
 }

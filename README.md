@@ -9,6 +9,8 @@ A lightweight, modular Three.js sandbox inspired by Minecraft. It procedurally g
 - First-person movement with gravity, sprinting, and jumping
 - Block interaction: left-click to dig, right-click to place selected block
 - Simple tree growth and water that renders only exposed surfaces
+- Compass, minimap with visit markers, and a visible avatar to ground navigation
+- Expanded block palette featuring cobble, clay, glass, and glowstone building blocks
 - Modular structure with focused folders for core, player, textures, world, and UI logic
 
 ## Getting Started
@@ -34,7 +36,10 @@ A lightweight, modular Three.js sandbox inspired by Minecraft. It procedurally g
 - `Mouse` – look around
 - `Left click` – dig block
 - `Right click` – place block
-- `1-5` – choose from the block palette (grass, dirt, stone, sand, logs)
+- `1-9` – choose from the block palette (grass, dirt, stone, sand, logs, cobble, clay, glass, glowstone)
+- `Q/E` – cycle blocks in the palette without using number keys
+- `V` – toggle first/third-person view
+- `Mouse wheel` – zoom camera distance while in third-person
 
 ## Project Layout
 
