@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Voxel World</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0c1018;
+        font-family: system-ui, sans-serif;
+        color: #e8f1ff;
+      }
+      #app {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        cursor: crosshair;
+      }
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top, rgba(12, 16, 24, 0.85), rgba(12, 16, 24, 0.95));
+        text-align: center;
+        z-index: 10;
+        transition: opacity 0.3s ease;
+      }
+      #overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #overlay button {
+        margin-top: 16px;
+        padding: 12px 32px;
+        background: linear-gradient(135deg, #2a7cff, #1e50ff);
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      #overlay p {
+        max-width: 420px;
+        line-height: 1.5;
+        opacity: 0.85;
+      }
+      #hud {
+        position: fixed;
+        inset: 24px auto auto 24px;
+        background: rgba(12, 16, 24, 0.6);
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="app"></canvas>
+    <div id="overlay">
+      <h1>Voxel Exploration</h1>
+      <p>Click to enter the world. Use WASD to move, space to jump, shift to sprint, and mouse to look around. Left click digs, right click places, number keys cycle blocks.</p>
+      <button id="start">Enter World</button>
+    </div>
+    <div id="hud"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
